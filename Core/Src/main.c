@@ -25,6 +25,7 @@
 /* USER CODE BEGIN Includes */
 #include "sys.h"
 #include "w25qxx.h"
+#include "stmflash.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -55,6 +56,49 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+/**
+ * @bieaf 进行BootLoader的启动
+ *
+ * @param  none
+ * @return none
+ */
+void bootloader_start(void)
+{
+    /*==========打印消息==========*/
+
+    switch(read_start_mode())										//读取是否启动应用程序
+    {
+		case STARTUP_NORMAL:										//正常启动
+		{
+			RTT_printf(0, "> normal start......\r\n");
+			break;
+		}
+		case STARTUP_UPDATE:										//升级再启动
+		{
+			RTT_printf(0, "> start update......\r\n");
+
+			move_code(APPLICATION_1_ADDR,0,app_size);
+
+			RTT_printf(0, "> update success......\r\n");
+			break;
+		}
+		case STARTUP_RESET:											//恢复出厂设置 目前没使用
+		{
+			RTT_printf(0, "> restore to factory program......\r\n");
+			break;
+		}
+		default:													//启动失败
+		{
+			RTT_printf(0, "> error:%X!!!......\r\n", read_start_mode());
+			return;
+		}
+    }
+
+    /* 跳转到应用程序 */
+    RTT_printf(0, "> start up......\r\n\r\n");
+
+    iap_execute_app(APPLICATION_1_ADDR);
+}
 
 /* USER CODE END 0 */
 
@@ -102,6 +146,7 @@ int main(void)
         for(;;);
     }
 
+    bootloader_start();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -191,7 +236,7 @@ void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+     ex: RTT_printf(0, "Wrong parameters value: file %s on line %d\r\n", file, line) */
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

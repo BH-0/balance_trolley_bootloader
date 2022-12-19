@@ -196,17 +196,17 @@ void move_code(uint32_t dest_addr, uint32_t src_addr,uint32_t size)
 	/*3.擦除源地址*/
 	
 	RTT_printf(0, "> start erase application 2 sector......\r\n");
-#if 0
+#if 1
 	//擦除
 	W25QXX_Erase_Block(src_addr + 0);	
 	W25QXX_Erase_Block(src_addr + (64*1024));
 
 	/* 清除升级标志 */
 	uint8_t buf[8] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-	//W25QXX_Write(buf, 64/8*1024*1024 - 8, 8);
+	W25QXX_Write(buf, 64/8*1024*1024 - 8, 8);
 #endif 
 	RTT_printf(0, "> erase application 2 success......\r\n");
-	
+	PCout(13) = 0;
 }
 
 //启动应用程序
@@ -221,7 +221,7 @@ void iap_execute_app (uint32_t app_addr)
 		//RTT_printf(0, "stack is legal\r\n");
 		
 		jump_to_app = (jump_func) * ( __IO uint32_t *)(app_addr + 4);			//用户代码区第二个字为程序开始地址(复位地址)		
-		
+
 		MSR_MSP( * ( __IO uint32_t * ) app_addr );								//初始化APP堆栈指针(用户代码区的第一个字用于存放栈顶地址)
 		
 		for(int i = 0; i < 8; i++)
@@ -229,6 +229,7 @@ void iap_execute_app (uint32_t app_addr)
 			NVIC->ICER[i] = 0xFFFFFFFF; /* 关闭中断*/
 			NVIC->ICPR[i] = 0xFFFFFFFF; /* 清除中断标志位 */
 		}
+        INTX_DISABLE();
 
 		jump_to_app();															//跳转到APP.
 	//}
